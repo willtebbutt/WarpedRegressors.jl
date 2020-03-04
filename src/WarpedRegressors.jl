@@ -1,6 +1,6 @@
 module WarpedRegressors
 
-using Bijectors, Distributions, Random, Stheno
+using BayesianLinearRegressors, Bijectors, Distributions, Random, Stheno
 
 using Bijectors: AbstractBijector
 using Stheno: AbstractGP

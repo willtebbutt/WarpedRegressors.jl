@@ -37,3 +37,10 @@ Compute the posterior distribution over `f` given observations `y`.
 function posterior(fx::FiniteWarpedRegressor{<:Stheno.FiniteGP}, y::AbstractVector)
     return WarpedRegressor((fx.fx.f | (fx.fx ← inv(fx.ϕ).(y))), fx.ϕ)
 end
+
+function posterior(
+    fx::FiniteWarpedRegressor{<:BayesianLinearRegressors.IndexedBLR},
+    y::AbstractVector,
+)
+    return WarpedRegressor(BayesianLinearRegressors.posterior(fx.fx, inv(fx.ϕ).(y)), fx.ϕ)
+end
