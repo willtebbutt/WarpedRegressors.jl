@@ -5,7 +5,10 @@ using BayesianLinearRegressors, Bijectors, Distributions, Random, Stheno
 using Bijectors: AbstractBijector
 using Stheno: AbstractGP
 
-export warp, posterior
+using BayesianLinearRegressors: IndexedBLR
+import BayesianLinearRegressors: posterior
+
+export warp
 
 include("warped_regressor.jl")
 include("extras.jl")
