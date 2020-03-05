@@ -1,6 +1,7 @@
-using WarpedRegressors
-using Test
+using BayesianLinearRegressors, Bijectors, LinearAlgebra, Random, Stheno, Test,
+    WarpedRegressors, Zygote
 
 @testset "WarpedRegressors.jl" begin
-    # Write your own tests here.
+    include("warped_regressor.jl")
+    include("extras.jl")
 end
