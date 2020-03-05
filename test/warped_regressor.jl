@@ -6,7 +6,7 @@ using WarpedRegressors: posterior
         rng = MersenneTwister(123456)
 
         # Construct a GP.
-        N = 11
+        N = 3
         s = 0.1
         x = randn(rng, N)
         f = GP(EQ(), GPC())
@@ -23,7 +23,7 @@ using WarpedRegressors: posterior
         @test y == rand(MersenneTwister(1), ϕfx)
 
         # Roughly check that the logpdf is correct. This really isn't a great test.
-        manual_logpdf = sum(logabsdetjacinv.(Ref(inv(ϕ)), y)) + logpdf(fx, inv(ϕ).(y))
+        manual_logpdf = sum(logabsdetjac.(Ref(inv(ϕ)), y)) + logpdf(fx, inv(ϕ).(y))
         @test manual_logpdf ≈ logpdf(ϕfx, y)
 
         # Check that gradients of the lml w.r.t. the parameters can be computed.
@@ -37,6 +37,16 @@ using WarpedRegressors: posterior
         manual_posterior = warp(f | (fx ← z), ϕ)
         post = posterior(ϕfx, y)
         @test logpdf(manual_posterior(x), y) ≈ logpdf(post(x), y)
+
+        # Check that an affine transformation of a GP given the same as scaling the GP.
+        let
+            f = GP(EQ(), GPC())
+            α = randn(rng)
+            αf = α * f
+            ϕf = warp(f, Bijectors.Scale(α))
+            y = rand(rng, αf(x))
+            @test logpdf(αf(x), y) ≈ logpdf(ϕf(x), y)
+        end
     end
     @testset "BayesianLinearRegressors" begin
         rng = MersenneTwister(123456)
@@ -60,7 +70,7 @@ using WarpedRegressors: posterior
         @test y == rand(MersenneTwister(1), ϕfx)
 
         # Roughly check that the logpdf is correct. This really isn't a great test.
-        manual_logpdf = sum(logabsdetjacinv.(Ref(inv(ϕ)), y)) + logpdf(fx, inv(ϕ).(y))
+        manual_logpdf = sum(logabsdetjac.(Ref(inv(ϕ)), y)) + logpdf(fx, inv(ϕ).(y))
         @test manual_logpdf ≈ logpdf(ϕfx, y)
 
         # Check that gradients of the lml w.r.t. the parameters can be computed.
