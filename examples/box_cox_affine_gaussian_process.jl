@@ -4,16 +4,13 @@ using WarpedRegressors: InvBoxCox, affine, posterior
 
 # Specify a Warped-GP.
 f = GP(kernel(EQ(); l=0.5), GPC())
-σ² = 0.01
+σ² = 0.0001
 ϕ = affine(0.0, 1.0) ∘ InvBoxCox(0.5)
-ϕ = affine(0.0, 1.0)
-ϕ = Bijectors.Shift(1.0)
-ϕ = Bijectors.Scale(2.0)
 g = warp(f, ϕ)
 
 # Generate some training data.
 rng = MersenneTwister(123456)
-Ntr = 200
+Ntr = 25
 Nte = 200
 x = 3 * randn(rng, Ntr + Nte)
 xtr = x[1:Ntr]
@@ -27,26 +24,28 @@ yte = y[Ntr+1:end]
 unpack(θ) = (
     σ² = log1pexp(θ[1]) + 1e-6,
     l  = log1pexp(θ[2]) + 1e-6,
-    λ = log1pexp(θ[3]) + 1e-6,
+    λ_affine = θ[3:4] .+ 1e-6,
+    λ = log1pexp(θ[5]) + 1e-6,
 )
 
 # Infer σ², l, and s.
 function nlml(θ::AbstractVector{<:Real})
     θ = unpack(θ)
     f = GP(kernel(EQ(); l=θ.l), GPC())
-    # ϕ = affine(θ.λ_affine...)
-    ϕ = Bijectors.Scale(θ.λ)
+    ϕ = affine(θ.λ_affine...) ∘ InvBoxCox(θ.λ)
     g = warp(f, ϕ)
     return -logpdf(g(xtr, θ.σ²), ytr)
 end
-θ0 = randn(3)
+θ0 = randn(5)
 opts = Optim.Options(iterations = 1_000, show_trace=false, extended_trace=false);
 results = Optim.optimize(nlml, θ0, NelderMead(), opts)
+
 θ = unpack(results.minimizer)
 
 
 # Construct posterior Warped GP
-f_learned = GP(kernel(EQ(); l=θ.l, s=θ.s), GPC())
+f_learned = GP(kernel(EQ(); l=θ.l), GPC())
+ϕ = affine(θ.λ_affine...) ∘ InvBoxCox(θ.λ)
 g_learned = warp(f_learned, ϕ)
 g_posterior = posterior(g_learned(xtr, θ.σ²), ytr)
 
