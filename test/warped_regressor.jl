@@ -36,7 +36,7 @@ using WarpedRegressors: posterior
         # Check that posterior does the correct thing. This really also isn't a great test.
         manual_posterior = warp(f | (fx ← z), ϕ)
         post = posterior(ϕfx, y)
-        @test logpdf(manual_posterior(x), y) == logpdf(post(x), y)
+        @test logpdf(manual_posterior(x), y) ≈ logpdf(post(x), y)
     end
     @testset "BayesianLinearRegressors" begin
         rng = MersenneTwister(123456)
@@ -74,6 +74,6 @@ using WarpedRegressors: posterior
         # Check that posterior does the correct thing. This really also isn't a great test.
         manual_posterior = warp(BayesianLinearRegressors.posterior(fx, z), ϕ)
         post = posterior(ϕfx, y)
-        @test logpdf(manual_posterior(x, 1e-6), y) == logpdf(post(x, 1e-6), y)
+        @test logpdf(manual_posterior(x, 1e-6), y) ≈ logpdf(post(x, 1e-6), y)
     end
 end
