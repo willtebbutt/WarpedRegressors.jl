@@ -3,4 +3,5 @@ using BayesianLinearRegressors, Bijectors, LinearAlgebra, Random, Stheno, Test,
 
 @testset "WarpedRegressors.jl" begin
     include("warped_regressor.jl")
+    include("extras.jl")
 end

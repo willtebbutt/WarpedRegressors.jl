@@ -26,7 +26,9 @@ Random.rand(rng::AbstractRNG, fx::FiniteWarpedRegressor) = fx.ϕ.(rand(rng, fx.f
 # Compute the logpdf of the warped regressor using the change-of-variables formula.
 function Distributions.logpdf(fx::FiniteWarpedRegressor, y::AbstractVector)
     ϕinv = inv(fx.ϕ)
-    return sum(logabsdetjacinv.(Ref(ϕinv), y)) + logpdf(fx.fx, ϕinv.(y))
+    ladj = sum(logabsdetjacinv.(Ref(ϕinv), y))
+    logpdf_latent = logpdf(fx.fx, ϕinv.(y))
+    return ladj + logpdf_latent 
 end
 
 """

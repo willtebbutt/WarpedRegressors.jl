@@ -8,5 +8,6 @@ using Stheno: AbstractGP
 export warp, posterior
 
 include("warped_regressor.jl")
+include("extras.jl")
 
 end # module
