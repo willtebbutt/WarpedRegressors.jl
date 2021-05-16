@@ -1,5 +1,11 @@
-using BayesianLinearRegressors, Bijectors, LinearAlgebra, Random, Stheno, Test,
-    WarpedRegressors, Zygote
+using AbstractGPs
+using BayesianLinearRegressors
+using Bijectors
+using LinearAlgebra
+using Random
+using Test
+using WarpedRegressors
+using Zygote
 
 @testset "WarpedRegressors.jl" begin
     include("warped_regressor.jl")

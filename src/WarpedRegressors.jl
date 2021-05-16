@@ -1,16 +1,14 @@
 module WarpedRegressors
 
-using BayesianLinearRegressors, Bijectors, Distributions, Random, Stheno
+using AbstractGPs
+using Bijectors
+using Random
 
-using Bijectors: AbstractBijector
-using Stheno: AbstractGP
-
-using BayesianLinearRegressors: IndexedBLR
-import BayesianLinearRegressors: posterior
-
-export warp
+using AbstractGPs: AbstractGP
 
 include("warped_regressor.jl")
 include("extras.jl")
+
+export warp
 
 end # module

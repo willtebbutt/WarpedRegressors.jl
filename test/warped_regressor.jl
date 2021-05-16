@@ -9,7 +9,7 @@ using WarpedRegressors: posterior
         N = 3
         s = 0.1
         x = randn(rng, N)
-        f = GP(EQ(), GPC())
+        f = GP(SEKernel())
         fx = f(x, s)
 
         # Construct a WarpedGP.
@@ -28,21 +28,20 @@ using WarpedRegressors: posterior
 
         # Check that gradients of the lml w.r.t. the parameters can be computed.
         function warped_regressor_logpdf(x, y, s)
-            ϕf = warp(GP(EQ(), GPC()), Exp())
+            ϕf = warp(GP(SEKernel()), Exp())
             return logpdf(ϕf(x, s), y)
         end
         Zygote.gradient(warped_regressor_logpdf, x, y, s)
 
         # Check that posterior does the correct thing. This really also isn't a great test.
-        manual_posterior = warp(f | (fx ← z), ϕ)
+        manual_posterior = warp(posterior(fx, z), ϕ)
         post = posterior(ϕfx, y)
         @test logpdf(manual_posterior(x), y) ≈ logpdf(post(x), y)
 
         # Check that an affine transformation of a GP given the same as scaling the GP.
         let
-            f = GP(EQ(), GPC())
             α = randn(rng)
-            αf = α * f
+            αf = GP(α^2 * SEKernel())
             ϕf = warp(f, Bijectors.Scale(α))
             y = rand(rng, αf(x))
             @test logpdf(αf(x), y) ≈ logpdf(ϕf(x), y)

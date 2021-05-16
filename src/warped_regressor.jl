@@ -1,45 +1,41 @@
 """
-    WarpedRegressor
+    WarpedGP
 
 Hierarchical model induced by compositing `ϕ` with `f`. Thus for a particular sampled
 function `f`, `y = ϕ(f(x))`.
+
+This subtypes GP, but it's not really a GP, so it shoudn't really do this. It's helpful to
+do this because it means that we can utilise FiniteGPs.
 """
-struct WarpedRegressor{Tf, Tϕ<:AbstractBijector}
+struct WarpedGP{Tf<:AbstractGP, Tϕ<:Bijectors.AbstractBijector} <: AbstractGP
     f::Tf
     ϕ::Tϕ
 end
 
-warp(f, ϕ) = WarpedRegressor(f, ϕ)
+warp(f, ϕ) = WarpedGP(f, ϕ)
 
-# For internal use only. Similar to `FiniteGP`.
-struct FiniteWarpedRegressor{Tfx, Tϕ<:AbstractBijector}
-    fx::Tfx
-    ϕ::Tϕ
-end
+const FiniteWarpedGP = AbstractGPs.FiniteGP{<:WarpedGP}
 
-# Just passes all inputs to the regressor contained in `f`.
-(f::WarpedRegressor)(x...) = FiniteWarpedRegressor(f.f(x...), f.ϕ)
+build_finite_gp(fx::FiniteWarpedGP) = fx.f.f(fx.x, fx.Σy)
+
+get_ϕ(fx::FiniteWarpedGP) = fx.f.ϕ
 
 # Sample from the warped regressor by warping samples from the regressor.
-Random.rand(rng::AbstractRNG, fx::FiniteWarpedRegressor) = fx.ϕ.(rand(rng, fx.fx))
+function AbstractGPs.rand(rng::AbstractRNG, fx::FiniteWarpedGP)
+    samples = rand(rng, build_finite_gp(fx))
+    return get_ϕ(fx).(samples)
+end
 
 # Compute the logpdf of the warped regressor using the change-of-variables formula.
-function Distributions.logpdf(fx::FiniteWarpedRegressor, y::AbstractVector)
-    ϕinv = inv(fx.ϕ)
+function AbstractGPs.logpdf(fx::FiniteWarpedGP, y::AbstractVector{<:Real})
+    ϕinv = inv(get_ϕ(fx))
     ladj = sum(logabsdetjac.(Ref(ϕinv), y))
-    logpdf_latent = logpdf(fx.fx, ϕinv.(y))
+    logpdf_latent = logpdf(build_finite_gp(fx), ϕinv.(y))
     return ladj + logpdf_latent 
 end
 
-"""
-    posterior(fx::FiniteWarpedRegressor, y::AbstractVector)
-
-Compute the posterior distribution over `f` given observations `y`.
-"""
-function BayesianLinearRegressors.posterior(fx::FiniteWarpedRegressor{<:Stheno.FiniteGP}, y::AbstractVector)
-    return WarpedRegressor((fx.fx.f | (fx.fx ← inv(fx.ϕ).(y))), fx.ϕ)
-end
-
-function BayesianLinearRegressors.posterior(fx::FiniteWarpedRegressor{<:IndexedBLR}, y::AbstractVector)
-    return WarpedRegressor(posterior(fx.fx, inv(fx.ϕ).(y)), fx.ϕ)
+# The posterior over a WarpedGP is another WarpedGP.
+function AbstractGPs.posterior(fx::FiniteWarpedGP, y::AbstractVector{<:Real})
+    ϕ = get_ϕ(fx)
+    return WarpedGP(posterior(build_finite_gp(fx), inv(ϕ).(y)), ϕ)
 end
